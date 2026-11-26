@@ -71,10 +71,24 @@
     </ul>
 
     <h3>Liste des Auto'Tips</h3>
-    <details open>
-      <summary>Série 1 : Entraînement</summary>
-      <img class="document" src="https://static.wixstatic.com/media/4ec4a8_577d3608cd4d4219a1d90b5d20caf598~mv2.png" alt="Auto'Tips série 1 : entraînement" width="832" height="227" loading="lazy">
-    </details>
+    <div class="selecteurs">
+      <label for="autotips-serie">Série
+        <select id="autotips-serie">
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5</option><option>6</option>
+          <option>7</option><option>8</option><option>9</option>
+        </select>
+      </label>
+      <label for="autotips-entrainement">Entraînement
+        <select id="autotips-entrainement">
+          <option>A</option><option>B</option><option>C</option>
+        </select>
+      </label>
+    </div>
+    <figure class="autotips-figure" aria-live="polite">
+      <img id="autotips-image" class="document" src="" alt="" width="832" height="227">
+      <p id="autotips-absent" class="bientot" hidden>Cette image n'est pas encore disponible.</p>
+    </figure>
     <details>
       <summary>Série 1 : Correction et leçon</summary>
       <img class="document" src="https://static.wixstatic.com/media/4ec4a8_bd621c4a62314797ba9d3926647ea970~mv2.png" alt="Auto'Tips série 1 : correction et leçon" width="600" height="446" loading="lazy">
@@ -156,6 +170,36 @@
   // Ouverture directe via une adresse du type 3emes.html#sequences
   var id = location.hash.slice(1);
   if (id && document.querySelector('.onglets [data-cible="' + id + '"]')) afficher(id);
+})();
+
+// --- Auto'Tips : choix de la série (1 à 9) et de l'entraînement (A à C) ---
+(function () {
+  var serie = document.getElementById('autotips-serie');
+  var entr = document.getElementById('autotips-entrainement');
+  var img = document.getElementById('autotips-image');
+  var absent = document.getElementById('autotips-absent');
+
+  // Images d'un autre emplacement que images/autotips/<série><lettre>.png
+  // (ex. : "1A" vient encore de Wix). Ajouter ici les exceptions.
+  var exceptions = {
+    '1A': 'https://static.wixstatic.com/media/4ec4a8_577d3608cd4d4219a1d90b5d20caf598~mv2.png'
+  };
+
+  function maj() {
+    var cle = serie.value + entr.value;
+    absent.hidden = true;
+    img.hidden = false;
+    img.alt = "Auto'Tips série " + serie.value + ", entraînement " + entr.value;
+    img.src = exceptions[cle] || 'images/autotips/' + cle + '.png';
+  }
+
+  img.addEventListener('error', function () {
+    img.hidden = true;
+    absent.hidden = false;
+  });
+  serie.addEventListener('change', maj);
+  entr.addEventListener('change', maj);
+  maj();
 })();
 </script>
 
