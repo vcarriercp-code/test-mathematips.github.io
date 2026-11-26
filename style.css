@@ -112,3 +112,8 @@ summary { cursor: pointer; font-weight: 600; }
 }
 .autotips-figure { margin: 0 0 20px; }
 .document[hidden] { display: none; }
+
+/* Bouton d'action (correction) */
+.bouton-action { border: 0; font: inherit; font-weight: 600; cursor: pointer; margin-bottom: 12px; }
+.bouton-action[aria-expanded="true"] { background: var(--texte); color: var(--fond); }
+.selecteurs select:disabled { opacity: 0.6; cursor: not-allowed; }

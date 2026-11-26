@@ -89,10 +89,23 @@
       <img id="autotips-image" class="document" src="" alt="" width="832" height="227">
       <p id="autotips-absent" class="bientot" hidden>Cette image n'est pas encore disponible.</p>
     </figure>
-    <details>
-      <summary>Série 1 : Correction et leçon</summary>
-      <img class="document" src="https://static.wixstatic.com/media/4ec4a8_bd621c4a62314797ba9d3926647ea970~mv2.png" alt="Auto'Tips série 1 : correction et leçon" width="600" height="446" loading="lazy">
-    </details>
+
+    <button type="button" id="autotips-correction-btn" class="bouton bouton-action" aria-expanded="false" aria-controls="autotips-correction">Afficher la correction</button>
+    <figure id="autotips-correction" class="autotips-figure" hidden>
+      <img id="autotips-correction-image" class="document" src="" alt="" width="832" height="227">
+      <p id="autotips-correction-absent" class="bientot" hidden>La correction n'est pas encore disponible.</p>
+    </figure>
+
+    <h3>Leçon</h3>
+    <div class="selecteurs">
+      <label for="autotips-lecon">Leçons liées à cet entraînement
+        <select id="autotips-lecon"></select>
+      </label>
+    </div>
+    <figure id="autotips-lecon-figure" class="autotips-figure" hidden>
+      <img id="autotips-lecon-image" class="document" src="" alt="" width="600" height="446">
+      <p id="autotips-lecon-absent" class="bientot" hidden>Cette leçon n'est pas encore disponible.</p>
+    </figure>
   </section>
 
   <section class="bloc panneau" id="sequences" hidden>
@@ -172,34 +185,106 @@
   if (id && document.querySelector('.onglets [data-cible="' + id + '"]')) afficher(id);
 })();
 
-// --- Auto'Tips : choix de la série (1 à 9) et de l'entraînement (A à C) ---
+// --- Auto'Tips : série (1 à 9), entraînement (A à C), correction et leçons ---
 (function () {
   var serie = document.getElementById('autotips-serie');
   var entr = document.getElementById('autotips-entrainement');
   var img = document.getElementById('autotips-image');
   var absent = document.getElementById('autotips-absent');
+  var btnCorr = document.getElementById('autotips-correction-btn');
+  var figCorr = document.getElementById('autotips-correction');
+  var imgCorr = document.getElementById('autotips-correction-image');
+  var absCorr = document.getElementById('autotips-correction-absent');
+  var selLecon = document.getElementById('autotips-lecon');
+  var figLecon = document.getElementById('autotips-lecon-figure');
+  var imgLecon = document.getElementById('autotips-lecon-image');
+  var absLecon = document.getElementById('autotips-lecon-absent');
 
-  // Images d'un autre emplacement que images/autotips/<série><lettre>.png
-  // (ex. : "1A" vient encore de Wix). Ajouter ici les exceptions.
-  var exceptions = {
+  // ===== À MODIFIER : images qui ne suivent pas la règle par défaut =====
+  // Entraînement  : images/autotips/<série><lettre>.png            (ex. images/autotips/2B.png)
+  // Correction    : images/autotips/<série><lettre>-correction.png (ex. images/autotips/2B-correction.png)
+  var imagesEntrainement = {
     '1A': 'https://static.wixstatic.com/media/4ec4a8_577d3608cd4d4219a1d90b5d20caf598~mv2.png'
   };
+  var imagesCorrection = {
+    // '1A': 'https://.../correction-1A.png'
+  };
 
-  function maj() {
-    var cle = serie.value + entr.value;
-    absent.hidden = true;
-    img.hidden = false;
-    img.alt = "Auto'Tips série " + serie.value + ", entraînement " + entr.value;
-    img.src = exceptions[cle] || 'images/autotips/' + cle + '.png';
+  // ===== À MODIFIER : leçons liées à chaque entraînement =====
+  // Clé = série + lettre. Pour chaque leçon : un titre et le chemin de l'image.
+  var lecons = {
+    '1A': [
+      { titre: 'Leçon liée à 1A', image: 'https://static.wixstatic.com/media/4ec4a8_bd621c4a62314797ba9d3926647ea970~mv2.png' }
+      // , { titre: 'Autre leçon', image: 'images/lecons/autre-lecon.png' }
+    ]
+    // '1B': [ { titre: '...', image: 'images/lecons/....png' } ],
+  };
+
+  function cle() { return serie.value + entr.value; }
+
+  function afficherImage(el, absentEl, src, alt) {
+    absentEl.hidden = true;
+    el.hidden = false;
+    el.alt = alt;
+    el.src = src;
   }
 
-  img.addEventListener('error', function () {
-    img.hidden = true;
-    absent.hidden = false;
-  });
-  serie.addEventListener('change', maj);
-  entr.addEventListener('change', maj);
-  maj();
+  function majEntrainement() {
+    afficherImage(img, absent,
+      imagesEntrainement[cle()] || 'images/autotips/' + cle() + '.png',
+      "Auto'Tips série " + serie.value + ", entraînement " + entr.value);
+  }
+
+  function majCorrection(visible) {
+    figCorr.hidden = !visible;
+    btnCorr.setAttribute('aria-expanded', visible ? 'true' : 'false');
+    btnCorr.textContent = visible ? 'Masquer la correction' : 'Afficher la correction';
+    if (visible) {
+      afficherImage(imgCorr, absCorr,
+        imagesCorrection[cle()] || 'images/autotips/' + cle() + '-correction.png',
+        'Correction de l\'entraînement ' + cle());
+    }
+  }
+
+  function majLecons() {
+    var liste = lecons[cle()] || [];
+    selLecon.innerHTML = '';
+    figLecon.hidden = true;
+    var vide = document.createElement('option');
+    vide.value = '';
+    vide.textContent = liste.length ? 'Choisir une leçon…' : 'Aucune leçon pour cet entraînement';
+    selLecon.appendChild(vide);
+    liste.forEach(function (l, i) {
+      var o = document.createElement('option');
+      o.value = String(i);
+      o.textContent = l.titre;
+      selLecon.appendChild(o);
+    });
+    selLecon.disabled = !liste.length;
+  }
+
+  function majLecon() {
+    var liste = lecons[cle()] || [];
+    var l = liste[parseInt(selLecon.value, 10)];
+    if (!l) { figLecon.hidden = true; return; }
+    figLecon.hidden = false;
+    afficherImage(imgLecon, absLecon, l.image, 'Leçon : ' + l.titre);
+  }
+
+  function majTout() {
+    majEntrainement();
+    majCorrection(false);
+    majLecons();
+  }
+
+  img.addEventListener('error', function () { img.hidden = true; absent.hidden = false; });
+  imgCorr.addEventListener('error', function () { imgCorr.hidden = true; absCorr.hidden = false; });
+  imgLecon.addEventListener('error', function () { imgLecon.hidden = true; absLecon.hidden = false; });
+  serie.addEventListener('change', majTout);
+  entr.addEventListener('change', majTout);
+  btnCorr.addEventListener('click', function () { majCorrection(figCorr.hidden); });
+  selLecon.addEventListener('change', majLecon);
+  majTout();
 })();
 </script>
 
