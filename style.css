@@ -97,3 +97,8 @@ summary { cursor: pointer; font-weight: 600; }
 .sequences { margin: 0; padding-left: 20px; columns: 2 280px; column-gap: 32px; }
 .sequences li { margin-bottom: 6px; }
 .menu a[aria-current="page"] { background: var(--accent); color: var(--texte); }
+
+/* Onglets de la page 3èmes */
+.onglets .bouton { border: 0; font: inherit; font-weight: 600; cursor: pointer; }
+.onglets .bouton[aria-pressed="true"] { background: var(--texte); color: var(--fond); }
+.panneau[hidden] { display: none; }

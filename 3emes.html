@@ -6,6 +6,7 @@
   <title>TROISIEMES | Mathéma'Tips</title>
   <meta name="description" content="Mon classeur de 3ème : Auto'Tips, séquences, prépa DNB, devoirs, évaluations et boîte à outils.">
   <link rel="stylesheet" href="style.css">
+  <noscript><style>.panneau[hidden]{display:block}</style></noscript>
 </head>
 <body>
 
@@ -38,15 +39,21 @@
   </section>
 
   <nav class="onglets" aria-label="Sections du classeur">
-    <a class="bouton" href="#autotips">Auto'Tips</a>
-    <a class="bouton" href="#sequences">Séquences</a>
-    <a class="bouton" href="#dnb">Prépa DNB</a>
-    <a class="bouton" href="#devoir">Devoir</a>
-    <a class="bouton" href="#evaluations">Évaluations</a>
-    <a class="bouton" href="#outils">Boîte à outils</a>
+    <button type="button" class="bouton" data-cible="autotips" aria-controls="autotips" aria-pressed="false">Auto'Tips</button>
+    <button type="button" class="bouton" data-cible="sequences" aria-controls="sequences" aria-pressed="false">Séquences</button>
+    <button type="button" class="bouton" data-cible="dnb" aria-controls="dnb" aria-pressed="false">Prépa DNB</button>
+    <button type="button" class="bouton" data-cible="devoir" aria-controls="devoir" aria-pressed="false">Devoir</button>
+    <button type="button" class="bouton" data-cible="evaluations" aria-controls="evaluations" aria-pressed="false">Évaluations</button>
+    <button type="button" class="bouton" data-cible="outils" aria-controls="outils" aria-pressed="false">Boîte à outils</button>
   </nav>
 
-  <section class="bloc" id="autotips">
+  <section class="bloc panneau" id="organisation">
+    <h2>Organisation du cours de math</h2>
+    <img class="document" src="https://static.wixstatic.com/media/4ec4a8_49825dbbe3c74208b4dca1ae5027e9bb~mv2.png" alt="Organisation du cours de mathématiques (1/2)" width="980" height="691">
+    <img class="document" src="https://static.wixstatic.com/media/4ec4a8_c827980de8a249ddb03865cbbd0137b8~mv2.png" alt="Organisation du cours de mathématiques (2/2)" width="980" height="692" loading="lazy">
+  </section>
+
+  <section class="bloc panneau" id="autotips" hidden>
     <h2>Auto'Tips</h2>
     <ul class="infos">
       <li>
@@ -74,7 +81,7 @@
     </details>
   </section>
 
-  <section class="bloc" id="sequences">
+  <section class="bloc panneau" id="sequences" hidden>
     <h2>Séquences</h2>
     <ul class="sequences">
       <li><a href="https://ldelaporte.wixsite.com/mathematips/sequence/sequence-1-calculer-avec-des-fractions">Séquence 1 : Calculer avec des fractions</a></li>
@@ -97,12 +104,12 @@
     </ul>
   </section>
 
-  <section class="bloc" id="dnb">
+  <section class="bloc panneau" id="dnb" hidden>
     <h2>Prépa DNB</h2>
     <p class="bientot">Contenu à venir.</p>
   </section>
 
-  <section class="bloc" id="devoir">
+  <section class="bloc panneau" id="devoir" hidden>
     <h2>Devoir</h2>
     <details open>
       <summary>Semaine 2</summary>
@@ -110,12 +117,12 @@
     </details>
   </section>
 
-  <section class="bloc" id="evaluations">
+  <section class="bloc panneau" id="evaluations" hidden>
     <h2>Évaluations</h2>
     <p class="bientot">Contenu à venir.</p>
   </section>
 
-  <section class="bloc" id="outils">
+  <section class="bloc panneau" id="outils" hidden>
     <h2>Boîte à outils</h2>
     <ul class="sequences">
       <li><a href="https://ldelaporte.wixsite.com/mathematips/3-lecons/pourcentage">Appliquer un pourcentage</a></li>
@@ -126,6 +133,31 @@
 <footer class="pied">
   <a href="index.html">Mathéma'Tips par Liza DELAPORTE</a>
 </footer>
+
+<script>
+(function () {
+  var boutons = document.querySelectorAll('.onglets [data-cible]');
+  var panneaux = document.querySelectorAll('.panneau');
+
+  function afficher(id) {
+    panneaux.forEach(function (p) { p.hidden = (p.id !== id); });
+    boutons.forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.cible === id ? 'true' : 'false');
+    });
+  }
+
+  boutons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      afficher(b.dataset.cible);
+      history.replaceState(null, '', '#' + b.dataset.cible);
+    });
+  });
+
+  // Ouverture directe via une adresse du type 3emes.html#sequences
+  var id = location.hash.slice(1);
+  if (id && document.querySelector('.onglets [data-cible="' + id + '"]')) afficher(id);
+})();
+</script>
 
 </body>
 </html>
