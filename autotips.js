@@ -407,8 +407,10 @@
     return shuffle([questionTableau(t1), questionTableau(!t1), { q: a[0], a: a[1] }, { q: b[0], a: b[1] }]);
   }
 
-  /* ================= Déclaration des séries ================= */
-  var TOTAL = 35;
+  /* ================= Auto'Tips (= objectifs) =================
+     Chaque Auto'Tips a un numéro, un nom, et un générateur de questions (genN ci-dessus). */
+  var TOTAL = 35;                 /* nombre de séries proposées dans la liste */
+  var QUESTIONS_MIN = 4;          /* une série pose au moins 4 questions (1 par Auto'Tips, plus si besoin) */
   var TITRES = {
     1: 'Écriture décimale de fractions',
     2: 'Comparer des nombres décimaux',
@@ -417,12 +419,12 @@
     6: 'Appliquer un pourcentage simple',
     7: 'Écrire un nombre sous de multiples formes',
     8: 'Passer de l\u2019écriture décimale à l\u2019écriture scientifique',
-    9: 'Connaître les carrés des nombres entiers de 1 à 12',
+    9: 'Connaître les carrés des nombres entiers compris entre 1 et 12',
     10: 'Appliquer les critères de divisibilité par 2, 3, 5, 9',
-    11: 'Pour un entier n : double, triple, moitié, prédécesseur, successeur, carré',
+    11: 'Pour un nombre entier n, exprimer son double, son triple, sa moitié, son prédécesseur, son successeur, son carré',
     19: 'Identifier des triangles, des quadrilatères particuliers, une médiatrice',
     20: 'Reconnaître et citer des angles',
-    21: 'Calculer la mesure du troisième angle d\u2019un triangle',
+    21: 'Calculer la mesure du troisième angle d\u2019un triangle connaissant les mesures des deux autres',
     22: 'Convertir des longueurs',
     23: 'Convertir des aires',
     24: 'Convertir des volumes',
@@ -434,49 +436,38 @@
   var GEN = { 1: gen1, 2: gen2, 3: gen3, 5: gen5, 6: gen6, 7: gen7, 8: gen8, 9: gen9, 10: gen10, 11: gen11,
     19: gen19, 20: gen20, 21: gen21, 22: gen22, 23: gen23, 24: gen24, 25: gen25, 26: gen26, 27: gen27, 29: gen29 };
 
-  /* ================= Leçons (Auto'Tips) liées à chaque série =================
-     Clé = numéro de série ; valeurs = numéros des Auto'Tips proposés dans la liste.
-     L'image d'un Auto'Tips N doit s'appeler : images/3emes/lecons/autotips-N.png (N de 1 à 32 : ce sont les numéros utilisés dans les listes). */
-  var LECONS = {
-    1: [1, 7],
-    2: [1, 2, 7, 12],
-    3: [2, 12, 23, 31],
-    4: [1, 3, 7, 13, 23, 31],
-    5: [2, 3, 4, 12, 13, 24],
-    6: [4, 5, 14, 23, 24, 31],
-    7: [3, 5, 9, 13, 14, 25],
-    8: [1, 4, 7, 9, 16, 24, 25, 26],
-    9: [2, 5, 12, 14, 16, 21, 26, 32],
-    10: [6, 9, 18, 21, 23, 25, 31, 32],
-    11: [3, 6, 8, 13, 16, 18, 22, 26],
-    12: [4, 8, 11, 19, 21, 22, 24, 32],
-    13: [5, 6, 11, 14, 18, 19, 27, 30],
-    14: [8, 9, 15, 20, 22, 25, 27, 30],
-    15: [1, 7, 8, 10, 11, 15, 17, 20],
-    16: [2, 10, 12, 16, 17, 26, 28, 29],
-    17: [23, 27, 28, 29, 30, 31],
-    18: [3, 13, 15, 20, 21, 32],
-    19: [4, 6, 10, 17, 18, 24],
-    20: [5, 8, 14, 22, 28, 29],
-    21: [9, 11, 19, 25, 27, 30],
-    22: [15, 16, 20, 26],
-    23: [10, 17, 21, 32],
-    24: [1, 6, 7, 18, 28, 29],
-    25: [2, 8, 22, 23],
-    26: [11, 19, 23, 31],
-    27: [3, 13, 27, 30],
-    28: [4, 15, 20, 24],
-    29: [5, 10, 14, 17],
-    30: [9, 25, 28, 29],
-    31: [16, 21, 26, 32],
-    32: [6, 8, 18, 22],
-    33: [11, 19, 27, 30],
-    34: [1, 7, 10, 15, 17, 20],
-    35: [2, 12, 23, 28, 29, 31]
+  /* ================= Séries =================
+     Clé = numéro de série ; valeurs = numéros des Auto'Tips (objectifs) travaillés dans cette série.
+     Ces mêmes Auto'Tips sont proposés dans la liste « leçons » sous les questions.
+     L'image d'un Auto'Tips N doit s'appeler : images/3emes/lecons/autotips-N.png
+     Séries 11 à 35 : à compléter (elles restent grisées dans la liste tant qu'elles ne sont pas ici). */
+  var SERIES = {
+    1: [3, 6],
+    2: [3, 6, 19],
+    3: [19, 29, 27],
+    4: [3, 6, 29, 27, 21],
+    5: [21, 9, 1, 19],
+    6: [9, 1, 22, 25, 29, 27],
+    7: [21, 22, 25, 11],
+    8: [3, 9, 1, 11],
+    9: [6, 22, 25, 2],
+    10: [19, 29, 2, 10]
   };
   function imageLecon(n) { return 'images/3emes/lecons/autotips-' + n + '.png'; }
 
-  if (typeof module !== 'undefined' && module.exports) { module.exports = { GEN: GEN, TITRES: TITRES }; }
+  /* Questions d'une série : une question par Auto'Tips, et on complète jusqu'à QUESTIONS_MIN
+     en reprenant les Auto'Tips dans l'ordre (questions différentes pour un même Auto'Tips). */
+  function questionsSerie(n) {
+    var obj = SERIES[n].filter(function (a) { return GEN[a]; });
+    var nb = obj.length, nombres = obj.map(function () { return 1; }), total = nb, i = 0, out = [];
+    while (nb && total < QUESTIONS_MIN) { nombres[i % nb]++; total++; i++; }
+    obj.forEach(function (a, k) {
+      shuffle(GEN[a]()).slice(0, nombres[k]).forEach(function (x) { out.push({ q: x.q, a: x.a, at: a }); });
+    });
+    return out;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) { module.exports = { GEN: GEN, TITRES: TITRES, SERIES: SERIES, questionsSerie: questionsSerie }; }
   if (typeof document === 'undefined') return;
 
   /* ================= Interface ================= */
@@ -500,7 +491,7 @@
   }
   selSerie.appendChild(option('', 'Choisir une série\u2026'));
   for (var n = 1; n <= TOTAL; n++) {
-    selSerie.appendChild(TITRES[n] ? option(String(n), n + ' \u2013 ' + TITRES[n]) : option(String(n), n + ' \u2013 (bientôt disponible)', true));
+    selSerie.appendChild(SERIES[n] ? option(String(n), 'Série ' + n) : option(String(n), 'Série ' + n + ' (bientôt disponible)', true));
   }
 
   function majBoutonCorrection() {
@@ -510,7 +501,7 @@
   }
 
   function majLecons() {
-    var n = selSerie.value, l = (n && LECONS[n]) || [];
+    var n = selSerie.value, l = (n && SERIES[n]) || [];
     selLecon.innerHTML = '';
     figLecon.hidden = true;
     selLecon.appendChild(option('', !n ? 'Choisis d\u2019abord une série' : l.length ? 'Choisir un Auto\u2019Tips\u2026' : 'Aucun Auto\u2019Tips pour cette série'));
@@ -521,11 +512,13 @@
   function afficherSerie() {
     var n = parseInt(selSerie.value, 10);
     corrige = false;
-    if (!n || !GEN[n]) { if (n) selSerie.value = ''; zone.hidden = true; liste.innerHTML = ''; majBoutonCorrection(); majLecons(); return; }
-    titre.textContent = 'Série ' + n + ' : ' + TITRES[n];
+    if (!n || !SERIES[n]) { if (n) selSerie.value = ''; zone.hidden = true; liste.innerHTML = ''; majBoutonCorrection(); majLecons(); return; }
+    titre.textContent = 'Série ' + n;
     liste.innerHTML = '';
-    GEN[n]().forEach(function (x, i) {
+    questionsSerie(n).forEach(function (x, i) {
       var li = document.createElement('li');
+      var obj = document.createElement('div'); obj.className = 'objectif';
+      obj.textContent = 'Auto\u2019Tips ' + x.at + ' \u2013 ' + TITRES[x.at];
       var q = document.createElement('div'); q.className = 'enonce'; q.innerHTML = x.q;
       var champ = document.createElement('input');
       champ.type = 'text'; champ.className = 'champ-reponse'; champ.autocomplete = 'off';
@@ -533,7 +526,7 @@
       champ.placeholder = 'Ta réponse';
       var rep = document.createElement('div'); rep.className = 'reponse'; rep.hidden = true;
       rep.innerHTML = '<strong>Correction :</strong> ' + x.a;
-      li.appendChild(q); li.appendChild(champ); li.appendChild(rep);
+      li.appendChild(obj); li.appendChild(q); li.appendChild(champ); li.appendChild(rep);
       liste.appendChild(li);
     });
     zone.hidden = false;
