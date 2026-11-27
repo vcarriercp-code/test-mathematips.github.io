@@ -121,19 +121,6 @@
     s.ateliers.forEach(function (a) {
       var li = el('li', 'atelier');
       li.appendChild(lien(a.nom, a.url));
-      var niveau = el('span', 'niveau');
-      niveau.setAttribute('aria-hidden', 'true');
-      for (var i = 0; i < 3; i++) {
-        var im = el('img'); im.src = 'images/sequence/icone-niveau.png'; im.alt = ''; im.width = 28; im.height = 28;
-        niveau.appendChild(im);
-      }
-      li.appendChild(niveau);
-      if (a.correction) {
-        var c = el('a', 'bouton bouton-correction', 'Correction'); c.href = a.correction; li.appendChild(c);
-      } else {
-        var c2 = el('span', 'bouton bouton-correction bouton-inactif', 'Correction');
-        c2.setAttribute('aria-disabled', 'true'); li.appendChild(c2);
-      }
       ul3.appendChild(li);
     });
     b3.appendChild(ul3);

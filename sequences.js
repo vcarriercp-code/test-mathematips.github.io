@@ -3,7 +3,7 @@
    Pour compléter une séquence : remplir « objectifs », « outils » et « ateliers ».
    Dès qu'une séquence a du contenu, elle devient un lien dans la liste de la page 3èmes.
    - outils   : { texte, url }          (leçons, roue, flashcards…)
-   - ateliers : { nom, url, correction } (correction = adresse de la correction, laisser '' si pas encore prête) */
+   - ateliers : { nom, url } */
 var SEQUENCES = [
   {
     n: 1, titre: 'Calculer avec des fractions',
@@ -16,13 +16,13 @@ var SEQUENCES = [
       { texte: 'Créer tes propres flashcards', url: 'https://ldelaporte.wixsite.com/mathematips/3-lecons/calculer-avec-des-fractions-flashcards' }
     ],
     ateliers: [
-      { nom: 'Atelier A : Cartes à pince', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/calculer-avec-des-fractions/atelier-a', correction: '' },
-      { nom: 'Atelier B : Dominos', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fraction/atelier-b', correction: '' },
-      { nom: 'Atelier C : Associer des paires', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-c-association-de-paires', correction: '' },
-      { nom: 'Atelier D : Cartes autocorrectives', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-d-flashcards', correction: '' },
-      { nom: 'Atelier E : Chercher l’erreur', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-e-flashcards', correction: '' },
-      { nom: 'Atelier F : Labyrinthe', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-f-labyrinthe', correction: '' },
-      { nom: 'Atelier G : Fiche de calculs', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-g-fiche-de-calculs', correction: '' }
+      { nom: 'Atelier A : Cartes à pince', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/calculer-avec-des-fractions/atelier-a' },
+      { nom: 'Atelier B : Dominos', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fraction/atelier-b' },
+      { nom: 'Atelier C : Associer des paires', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-c-association-de-paires' },
+      { nom: 'Atelier D : Cartes autocorrectives', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-d-flashcards' },
+      { nom: 'Atelier E : Chercher l’erreur', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-e-flashcards' },
+      { nom: 'Atelier F : Labyrinthe', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-f-labyrinthe' },
+      { nom: 'Atelier G : Fiche de calculs', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-1-calculer-avec-des-fractions/atelier-g-fiche-de-calculs' }
     ]
   },
   {
@@ -40,12 +40,12 @@ var SEQUENCES = [
       { texte: 'Leçon C6 : Factoriser des expressions', url: 'https://ldelaporte.wixsite.com/mathematips/3-lecons/calcul-litteral-1-c6' }
     ],
     ateliers: [
-      { nom: 'Atelier A : Expressions à relier', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-a-expression-%C3%A0-relier', correction: '' },
-      { nom: 'Atelier B : Cartes autocorrectrices', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-b-flashcards', correction: '' },
-      { nom: 'Atelier C : Associer des paires', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-c-association-de-paires', correction: '' },
-      { nom: 'Atelier D : Dominos', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-d-dominos', correction: '' },
-      { nom: 'Atelier E : Cluedo', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-e-cluedo', correction: '' },
-      { nom: 'Atelier G : Exercices', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-g-exercices', correction: '' }
+      { nom: 'Atelier A : Expressions à relier', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-a-expression-%C3%A0-relier' },
+      { nom: 'Atelier B : Cartes autocorrectrices', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-b-flashcards' },
+      { nom: 'Atelier C : Associer des paires', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-c-association-de-paires' },
+      { nom: 'Atelier D : Dominos', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-d-dominos' },
+      { nom: 'Atelier E : Cluedo', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-e-cluedo' },
+      { nom: 'Atelier G : Exercices', url: 'https://ldelaporte.wixsite.com/mathematips/exercices/sequence-2-calcul-litteral-1/atelier-g-exercices' }
     ]
   },
   { n: 3, titre: 'Statistiques', objectifs: [], outils: [], ateliers: [] },
