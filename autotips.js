@@ -434,12 +434,44 @@
   var GEN = { 1: gen1, 2: gen2, 3: gen3, 5: gen5, 6: gen6, 7: gen7, 8: gen8, 9: gen9, 10: gen10, 11: gen11,
     19: gen19, 20: gen20, 21: gen21, 22: gen22, 23: gen23, 24: gen24, 25: gen25, 26: gen26, 27: gen27, 29: gen29 };
 
-  /* ================= Leçons liées à chaque série =================
-     Clé = numéro de série. Pour chaque leçon : un titre et le chemin de l'image.
-     Exemple :  '5': [ { titre: 'Les fractions', image: 'images/3emes/lecons/fractions.png' } ]  */
+  /* ================= Leçons (Auto'Tips) liées à chaque série =================
+     Clé = numéro de série ; valeurs = numéros des Auto'Tips proposés dans la liste.
+     L'image d'un Auto'Tips N doit s'appeler : images/3emes/lecons/autotips-N.png (N de 1 à 32). */
   var LECONS = {
-    '1': [{ titre: 'Leçon liée à la série 1 (titre à définir)', image: 'images/3emes/lecons/lecon-1A.png' }]
+    1: [1, 7],
+    2: [1, 2, 7, 12],
+    3: [2, 12, 23, 31],
+    4: [1, 3, 7, 13, 23, 31],
+    5: [2, 3, 4, 12, 13, 24],
+    6: [4, 5, 14, 23, 24, 31],
+    7: [3, 5, 9, 13, 14, 25],
+    8: [1, 4, 7, 9, 16, 24, 25, 26],
+    9: [2, 5, 12, 14, 16, 21, 26, 32],
+    10: [6, 9, 18, 21, 23, 25, 31, 32],
+    11: [3, 6, 8, 13, 16, 18, 22, 26],
+    12: [4, 8, 11, 19, 21, 22, 24, 32],
+    13: [5, 6, 11, 14, 18, 19, 27, 30],
+    14: [8, 9, 15, 20, 22, 25, 27, 30],
+    15: [1, 7, 8, 10, 11, 15, 17, 20],
+    16: [2, 10, 12, 16, 17, 26, 28, 29],
+    17: [23, 27, 28, 29, 30, 31],
+    18: [3, 13, 15, 20, 21, 32],
+    19: [4, 6, 10, 17, 18, 24],
+    20: [5, 8, 14, 22, 28, 29],
+    21: [9, 11, 19, 25, 27, 30],
+    22: [15, 16, 20, 26],
+    23: [10, 17, 21, 32],
+    24: [1, 6, 7, 18, 28, 29],
+    25: [2, 8, 22, 23],
+    26: [11, 19, 23, 31],
+    27: [3, 13, 27, 30],
+    28: [4, 15, 20, 24],
+    29: [5, 10, 14, 17],
+    30: [9, 25, 28, 29],
+    31: [16, 21, 26, 32],
+    32: [6, 8, 18, 22]
   };
+  function imageLecon(n) { return 'images/3emes/lecons/autotips-' + n + '.png'; }
 
   if (typeof module !== 'undefined' && module.exports) { module.exports = { GEN: GEN, TITRES: TITRES }; }
   if (typeof document === 'undefined') return;
@@ -478,15 +510,15 @@
     var n = selSerie.value, l = (n && LECONS[n]) || [];
     selLecon.innerHTML = '';
     figLecon.hidden = true;
-    selLecon.appendChild(option('', !n ? 'Choisis d\u2019abord une série' : l.length ? 'Choisir une leçon\u2026' : 'Aucune leçon pour cette série'));
-    l.forEach(function (x, i) { selLecon.appendChild(option(String(i), x.titre)); });
+    selLecon.appendChild(option('', !n ? 'Choisis d\u2019abord une série' : l.length ? 'Choisir un Auto\u2019Tips\u2026' : 'Aucun Auto\u2019Tips pour cette série'));
+    l.forEach(function (x) { selLecon.appendChild(option(String(x), 'Auto\u2019Tips ' + x)); });
     selLecon.disabled = !l.length;
   }
 
   function afficherSerie() {
     var n = parseInt(selSerie.value, 10);
     corrige = false;
-    if (!n) { zone.hidden = true; liste.innerHTML = ''; majBoutonCorrection(); majLecons(); return; }
+    if (!n || !GEN[n]) { if (n) selSerie.value = ''; zone.hidden = true; liste.innerHTML = ''; majBoutonCorrection(); majLecons(); return; }
     titre.textContent = 'Série ' + n + ' : ' + TITRES[n];
     liste.innerHTML = '';
     GEN[n]().forEach(function (x, i) {
@@ -507,11 +539,11 @@
   }
 
   function afficherLecon() {
-    var l = (LECONS[selSerie.value] || [])[parseInt(selLecon.value, 10)];
-    if (!l) { figLecon.hidden = true; return; }
+    var k = parseInt(selLecon.value, 10);
+    if (!k) { figLecon.hidden = true; return; }
     figLecon.hidden = false; absLecon.hidden = true; imgLecon.hidden = false;
-    imgLecon.alt = 'Leçon : ' + l.titre;
-    imgLecon.src = l.image;
+    imgLecon.alt = 'Auto\u2019Tips ' + k;
+    imgLecon.src = imageLecon(k);
   }
 
   imgLecon.addEventListener('error', function () { imgLecon.hidden = true; absLecon.hidden = false; });
