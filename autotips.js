@@ -408,7 +408,7 @@
   }
 
   /* ================= Déclaration des séries ================= */
-  var TOTAL = 32;
+  var TOTAL = 35;
   var TITRES = {
     1: 'Écriture décimale de fractions',
     2: 'Comparer des nombres décimaux',
@@ -436,7 +436,7 @@
 
   /* ================= Leçons (Auto'Tips) liées à chaque série =================
      Clé = numéro de série ; valeurs = numéros des Auto'Tips proposés dans la liste.
-     L'image d'un Auto'Tips N doit s'appeler : images/3emes/lecons/autotips-N.png (N de 1 à 32). */
+     L'image d'un Auto'Tips N doit s'appeler : images/3emes/lecons/autotips-N.png (N de 1 à 32 : ce sont les numéros utilisés dans les listes). */
   var LECONS = {
     1: [1, 7],
     2: [1, 2, 7, 12],
@@ -469,7 +469,10 @@
     29: [5, 10, 14, 17],
     30: [9, 25, 28, 29],
     31: [16, 21, 26, 32],
-    32: [6, 8, 18, 22]
+    32: [6, 8, 18, 22],
+    33: [11, 19, 27, 30],
+    34: [1, 7, 10, 15, 17, 20],
+    35: [2, 12, 23, 28, 29, 31]
   };
   function imageLecon(n) { return 'images/3emes/lecons/autotips-' + n + '.png'; }
 
