@@ -440,7 +440,7 @@
      Clé = numéro de série ; valeurs = numéros des Auto'Tips (objectifs) travaillés dans cette série.
      Ces mêmes Auto'Tips sont proposés dans la liste « leçons » sous les questions.
      L'image d'un Auto'Tips N doit s'appeler : images/3emes/lecons/autotips-N.png
-     Séries 11 à 35 : à compléter (elles restent grisées dans la liste tant qu'elles ne sont pas ici). */
+     Séries 19 à 35 : à compléter (elles restent grisées dans la liste tant qu'elles ne sont pas ici). */
   var SERIES = {
     1: [3, 6],
     2: [3, 6, 19],
@@ -451,7 +451,15 @@
     7: [21, 22, 25, 11],
     8: [3, 9, 1, 11],
     9: [6, 22, 25, 2],
-    10: [19, 29, 2, 10]
+    10: [19, 29, 2, 10],
+    11: [27, 11, 10, 8],
+    12: [21, 2, 8, 20],
+    13: [9, 1, 10, 20],
+    14: [22, 25, 11, 8],
+    15: [3, 6],
+    16: [19, 2],
+    17: [29, 27],
+    18: [21, 10]
   };
   function imageLecon(n) { return 'images/3emes/lecons/autotips-' + n + '.png'; }
 
