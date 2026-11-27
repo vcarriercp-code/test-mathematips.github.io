@@ -135,3 +135,16 @@ summary { cursor: pointer; font-weight: 600; }
 .tableau-prop { border-collapse: collapse; margin-top: 8px; background: var(--fond); }
 .tableau-prop th, .tableau-prop td { border: 1px solid var(--accent); padding: 6px 12px; text-align: center; }
 .tableau-prop th { text-align: left; background: var(--accent); }
+
+/* Page séquence */
+.bandeau a { color: var(--texte); font-weight: 600; }
+.icone-titre { vertical-align: middle; margin-right: 12px; width: 56px; height: auto; }
+.objectifs { margin: 0; padding-left: 22px; }
+.objectifs li { margin-bottom: 6px; }
+.liens, .ateliers { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.atelier { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; background: var(--rose); border: 2px solid var(--accent); border-radius: 12px; padding: 12px 16px; }
+.atelier .bouton:first-child { background: var(--fond); }
+.niveau { display: inline-flex; gap: 2px; }
+.bouton-correction { margin-left: auto; }
+.bouton-inactif { opacity: 0.5; cursor: not-allowed; }
+.bouton-inactif:hover { background: var(--accent); color: var(--texte); }

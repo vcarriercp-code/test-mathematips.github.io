@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Séquence | Mathéma'Tips</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="entete">
+  <a class="logo" href="index.html">
+    <img src="images/commun/logo.png" alt="Logo Mathéma'Tips" width="149" height="69">
+  </a>
+  <nav aria-label="Navigation principale">
+    <ul class="menu">
+      <li><a href="index.html">Accueil</a></li>
+      <li class="deroulant">
+        <button type="button" aria-haspopup="true">Cours</button>
+        <ul class="sous-menu">
+          <li><a href="https://ldelaporte.wixsite.com/mathematips/6èmes">Sixièmes</a></li>
+          <li><a href="3emes.html" aria-current="page">Troisièmes</a></li>
+        </ul>
+      </li>
+      <li><a href="https://ldelaporte.wixsite.com/mathematips/prof">Prof</a></li>
+      <li><a href="index.html#a-propos">À propos</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <section class="bandeau">
+    <img src="images/commun/icone-3eme.png" alt="" width="118" height="100">
+    <div>
+      <h1 id="titre-sequence">Séquence</h1>
+      <p><a href="3emes.html#sequences">&larr; Retour au classeur de 3ème</a></p>
+    </div>
+  </section>
+
+  <div id="contenu-sequence">
+    <p class="bloc bientot">Chargement…</p>
+  </div>
+</main>
+
+<footer class="pied">
+  <a href="index.html">Mathéma'Tips par Liza DELAPORTE</a>
+</footer>
+
+<script src="sequences.js"></script>
+<script>
+(function () {
+  var racine = document.getElementById('contenu-sequence');
+  var titre = document.getElementById('titre-sequence');
+  var n = parseInt(new URLSearchParams(location.search).get('n'), 10);
+  var s = SEQUENCES.filter(function (x) { return x.n === n; })[0];
+
+  function el(tag, classe, texte) {
+    var e = document.createElement(tag);
+    if (classe) e.className = classe;
+    if (texte) e.textContent = texte;
+    return e;
+  }
+  function bloc(titreBloc, icone) {
+    var section = el('section', 'bloc');
+    var h2 = el('h2');
+    if (icone) {
+      var img = el('img', 'icone-titre');
+      img.src = icone; img.alt = ''; img.width = 56; img.height = 56;
+      h2.appendChild(img);
+    }
+    h2.appendChild(document.createTextNode(titreBloc));
+    section.appendChild(h2);
+    racine.appendChild(section);
+    return section;
+  }
+  function lien(texte, url) {
+    var a = el('a', 'bouton', texte);
+    a.href = url;
+    return a;
+  }
+
+  racine.innerHTML = '';
+
+  if (!s) {
+    titre.textContent = 'Séquence introuvable';
+    document.title = 'Séquence introuvable | Mathéma\u2019Tips';
+    racine.appendChild(el('p', 'bloc bientot', 'Cette séquence n\u2019existe pas. Retourne au classeur pour choisir une séquence.'));
+    return;
+  }
+
+  titre.textContent = 'Séquence ' + s.n + ' : ' + s.titre;
+  document.title = 'Séquence ' + s.n + ' : ' + s.titre + ' | Mathéma\u2019Tips';
+
+  if (!sequenceAContenu(s)) {
+    racine.appendChild(el('p', 'bloc bientot', 'Le contenu de cette séquence arrive bientôt.'));
+    return;
+  }
+
+  /* Objectifs */
+  if (s.objectifs.length) {
+    var b1 = bloc('Objectifs :');
+    var ul1 = el('ul', 'objectifs');
+    s.objectifs.forEach(function (o) { ul1.appendChild(el('li', '', o)); });
+    b1.appendChild(ul1);
+  }
+
+  /* Outils */
+  if (s.outils.length) {
+    var b2 = bloc('Outils', 'images/sequence/icone-outils.png');
+    var ul2 = el('ul', 'liens');
+    s.outils.forEach(function (o) {
+      var li = el('li'); li.appendChild(lien(o.texte, o.url)); ul2.appendChild(li);
+    });
+    b2.appendChild(ul2);
+  }
+
+  /* Entraînement */
+  if (s.ateliers.length) {
+    var b3 = bloc('Entraînement :', 'images/sequence/icone-entrainement.png');
+    var ul3 = el('ul', 'ateliers');
+    s.ateliers.forEach(function (a) {
+      var li = el('li', 'atelier');
+      li.appendChild(lien(a.nom, a.url));
+      var niveau = el('span', 'niveau');
+      niveau.setAttribute('aria-hidden', 'true');
+      for (var i = 0; i < 3; i++) {
+        var im = el('img'); im.src = 'images/sequence/icone-niveau.png'; im.alt = ''; im.width = 28; im.height = 28;
+        niveau.appendChild(im);
+      }
+      li.appendChild(niveau);
+      if (a.correction) {
+        var c = el('a', 'bouton bouton-correction', 'Correction'); c.href = a.correction; li.appendChild(c);
+      } else {
+        var c2 = el('span', 'bouton bouton-correction bouton-inactif', 'Correction');
+        c2.setAttribute('aria-disabled', 'true'); li.appendChild(c2);
+      }
+      ul3.appendChild(li);
+    });
+    b3.appendChild(ul3);
+  }
+})();
+</script>
+
+</body>
+</html>
