@@ -117,3 +117,21 @@ summary { cursor: pointer; font-weight: 600; }
 .bouton-action { border: 0; font: inherit; font-weight: 600; cursor: pointer; margin-bottom: 12px; }
 .bouton-action[aria-expanded="true"] { background: var(--texte); color: var(--fond); }
 .selecteurs select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Auto'Tips : questions générées */
+.questions { list-style: decimal; padding-left: 1.4em; display: grid; gap: 14px; margin: 0 0 16px; }
+.questions li { background: var(--rose); border: 2px solid var(--accent); border-radius: 12px; padding: 14px 16px; }
+.questions li::marker { font-weight: 700; }
+.enonce { margin-bottom: 10px; }
+.champ-reponse {
+  width: 100%; max-width: 420px; font: inherit; padding: 8px 12px;
+  border: 2px solid var(--accent); border-radius: 8px; background: var(--fond); color: var(--texte);
+}
+.reponse { margin-top: 10px; padding: 8px 12px; border-left: 4px solid var(--texte); background: var(--fond); border-radius: 4px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 0.15em; line-height: 1.15; font-size: 0.95em; }
+.frac > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 0.25em 0.05em; }
+.frac > span:last-child { padding: 0.05em 0.25em 0; }
+.tableau-prop { border-collapse: collapse; margin-top: 8px; background: var(--fond); }
+.tableau-prop th, .tableau-prop td { border: 1px solid var(--accent); padding: 6px 12px; text-align: center; }
+.tableau-prop th { text-align: left; background: var(--accent); }
