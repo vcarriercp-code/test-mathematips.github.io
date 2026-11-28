@@ -60,6 +60,130 @@
     return st ? deplacer(v, -st) : v;
   }
 
+
+  /* ================= Vérification des réponses =================
+     Chaque question porte un attribut v qui décrit la bonne réponse sous une forme que la machine sait comparer. */
+  function vNum(val, unite) { return { t: 'num', val: Number(val), u: unite || null }; }
+  function vFrac(n, d, irr) { return { t: 'frac', n: n, d: d, irr: !!irr }; }
+  function vOuiNon(oui) { return { t: 'ouinon', oui: !!oui }; }
+  function vOrdre(vals) { return { t: 'ordre', vals: vals.map(Number) }; }
+  function vSym(sym) { return { t: 'sym', sym: sym }; }
+  function vSci(mant, e) { return { t: 'sci', m: Number(mant), e: e }; }
+  function vExpr(liste) { return { t: 'expr', liste: liste }; }
+  function vMots(alts) { return { t: 'mots', alts: alts }; }
+
+  function sansAccents(s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function normaliserSignes(s) {
+    return String(s).replace(/[\u2212\u2013\u2014]/g, '-').replace(/[\u00a0\u202f]/g, ' ');
+  }
+  /* Nombre écrit par l'élève : "9 660", "0,5", "-3.2", "2,5e3" ; renvoie { val, reste } ou null */
+  function lireNombre(texte) {
+    var t = normaliserSignes(texte).toLowerCase();
+    if (t.indexOf('=') >= 0) t = t.slice(t.lastIndexOf('=') + 1);
+    t = t.replace(/(\d)\s+(?=\d)/g, '$1').replace(/,/g, '.').trim();
+    var m = /^[^\d+\-.]*([+\-]?\s*\d*\.?\d+(?:e[+\-]?\d+)?)(.*)$/.exec(t);
+    if (!m) return null;
+    var val = Number(m[1].replace(/\s+/g, ''));
+    return isNaN(val) ? null : { val: val, reste: m[2] };
+  }
+  function proche(a, b) { return Math.abs(a - b) <= 1e-9 * Math.abs(b) + 1e-12; }
+  function uniteNorm(s) {
+    return sansAccents(s).replace(/\u00b2/g, '2').replace(/\u00b3/g, '3').replace(/degres?|\u00b0|\u20ac|euros?/g, '').replace(/[^a-z0-9%]/g, '');
+  }
+  var ALIAS_UNITES = {
+    l: ['litre', 'litres'], s: ['sec', 'seconde', 'secondes'], min: ['minute', 'minutes', 'mn'], h: ['heure', 'heures'],
+    jours: ['j', 'jour'], '%': ['pourcent', 'pourcents', 'pourcentage'],
+    m: ['metre', 'metres'], km: ['kilometre', 'kilometres'], hm: ['hectometre', 'hectometres'], dam: ['decametre', 'decametres'],
+    dm: ['decimetre', 'decimetres'], cm: ['centimetre', 'centimetres'], mm: ['millimetre', 'millimetres']
+  };
+  function uniteAcceptee(attendue, saisie) {
+    var a = uniteNorm(attendue), s = uniteNorm(saisie);
+    if (!s) return true;
+    return s === a || (ALIAS_UNITES[a] || []).indexOf(s) >= 0;
+  }
+  function distance(a, b) {
+    var d = [], i, j;
+    for (i = 0; i <= a.length; i++) d[i] = [i];
+    for (j = 0; j <= b.length; j++) d[0][j] = j;
+    for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[a.length][b.length];
+  }
+  function motPresent(tokens, mot) {
+    var tol = mot.length <= 4 ? 0 : mot.length <= 7 ? 1 : 2;
+    return tokens.some(function (t) {
+      return t === mot || (mot.length >= 4 && t.indexOf(mot) === 0) || distance(t, mot) <= tol;
+    });
+  }
+  /* Vocabulaire de géométrie : une réponse qui contient d'autres mots que ceux attendus est fausse. */
+  var VOCAB = ['equilateral', 'isocele', 'rectangle', 'quelconque', 'scalene', 'losange', 'carre', 'parallelogramme', 'trapeze',
+    'mediatrice', 'aigu', 'droit', 'obtus', 'plat', 'complementaire', 'supplementaire'];
+
+  /* Renvoie true (juste), false (faux) ou null (pas de réponse). */
+  function verifier(v, texte) {
+    var brut = String(texte || '').trim();
+    if (!brut || !v) return null;
+    var t = normaliserSignes(brut), x, i;
+
+    if (v.t === 'num') {
+      x = lireNombre(t);
+      if (!x || !proche(x.val, v.val)) return false;
+      return v.u ? uniteAcceptee(v.u, x.reste) : true;
+    }
+    if (v.t === 'frac') {
+      var tt = t.toLowerCase().replace(/,/g, '.');
+      if (tt.indexOf('=') >= 0) tt = tt.slice(tt.lastIndexOf('=') + 1);
+      var f = /(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/.exec(tt);
+      if (f) {
+        var n = Number(f[1]), d = Number(f[2]);
+        if (v.irr) return n === v.n && d === v.d;
+        return d !== 0 && proche(n / d, v.n / v.d);
+      }
+      if (v.irr) return false;
+      x = lireNombre(tt);
+      if (!x) return false;
+      return proche(/%/.test(x.reste) ? x.val / 100 : x.val, v.n / v.d);
+    }
+    if (v.t === 'ouinon') {
+      var m = sansAccents(t).replace(/[^a-z]/g, ' ').trim().split(/\s+/)[0];
+      return (m === 'oui' && v.oui) || (m === 'non' && !v.oui);
+    }
+    if (v.t === 'ordre') {
+      var nb = t.replace(/,/g, '.').match(/-?\d+(?:\.\d+)?/g) || [];
+      if (nb.length !== v.vals.length) return false;
+      for (i = 0; i < nb.length; i++) if (!proche(Number(nb[i]), v.vals[i])) return false;
+      return true;
+    }
+    if (v.t === 'sym') {
+      var s2 = sansAccents(t), inf = /[<\uff1c]|inferieur|plus petit/.test(s2), sup2 = /[>\uff1e]|superieur|plus grand/.test(s2);
+      return v.sym === '<' ? (inf && !sup2) : (sup2 && !inf);
+    }
+    if (v.t === 'sci') {
+      var map = { '\u2070': 0, '\u00b9': 1, '\u00b2': 2, '\u00b3': 3, '\u2074': 4, '\u2075': 5, '\u2076': 6, '\u2077': 7, '\u2078': 8, '\u2079': 9 };
+      var u = t.toLowerCase().replace(/[\u2070\u00b9\u00b2\u00b3\u2074-\u2079\u207b]+/g, function (r) {
+        return '^' + r.split('').map(function (c) { return c === '\u207b' ? '-' : map[c]; }).join('');
+      });
+      u = u.replace(/[\u00d7x\u00b7]/g, '*').replace(/,/g, '.').replace(/\s+/g, '');
+      if (u.indexOf('=') >= 0) u = u.slice(u.lastIndexOf('=') + 1);
+      var r1 = /^([+\-]?\d+\.?\d*)\*?10\^?\(?([+\-]?\d+)\)?$/.exec(u) || /^([+\-]?\d+\.?\d*)e([+\-]?\d+)$/.exec(u);
+      return !!r1 && proche(Number(r1[1]), v.m) && Number(r1[2]) === v.e;
+    }
+    if (v.t === 'expr') {
+      var e = t.toLowerCase().replace(/[\u00d7\u00b7]/g, '*').replace(/\u00f7/g, '/').replace(/\u00b2/g, '^2').replace(/,/g, '.').replace(/\s+/g, '');
+      if (e.indexOf('=') >= 0) e = e.slice(e.lastIndexOf('=') + 1);
+      return v.liste.indexOf(e.replace(/[()]/g, '')) >= 0;
+    }
+    if (v.t === 'mots') {
+      var tokens = sansAccents(t).split(/[^a-z0-9]+/).filter(Boolean);
+      var trouves = VOCAB.filter(function (w) { return motPresent(tokens, w); });
+      return v.alts.some(function (alt) {
+        if (!alt.every(function (w) { return motPresent(tokens, w); })) return false;
+        return trouves.every(function (w) { return alt.indexOf(w) >= 0; });
+      });
+    }
+    return false;
+  }
+
   /* ================= Séries ================= */
 
   /* 1 – Écriture décimale de fractions */
@@ -68,7 +192,7 @@
     for (var i = 0; i < 4; i++) {
       var d = dens[i], n;
       do { n = rnd(1, Math.min(d * 2, 999)); } while (n % d === 0);
-      out.push({ q: 'Donne l\u2019écriture décimale de ' + frac(n, d) + '.', a: frac(n, d) + ' = ' + fr(n / d) });
+      out.push({ q: 'Donne l\u2019écriture décimale de ' + frac(n, d) + '.', a: frac(n, d) + ' = ' + fr(n / d), v: vNum(n / d) });
     }
     return out;
   }
@@ -96,7 +220,8 @@
       var e = rnd(0, 15), p = nombresDistincts(2, [e]), a = p[0], b = p[1];
       out.push({
         q: 'Compare ces deux nombres avec le signe &lt; ou &gt; : ' + frStr(a) + ' &nbsp;…&nbsp; ' + frStr(b),
-        a: frStr(a) + ' ' + (parseFloat(a) < parseFloat(b) ? '&lt;' : '&gt;') + ' ' + frStr(b)
+        a: frStr(a) + ' ' + (parseFloat(a) < parseFloat(b) ? '&lt;' : '&gt;') + ' ' + frStr(b),
+        v: vSym(parseFloat(a) < parseFloat(b) ? '<' : '>')
       });
     }
     var e1 = rnd(0, 15), l1 = nombresDistincts(4, [e1]);
@@ -104,8 +229,8 @@
     function tri(l, signe, croissant) {
       return l.slice().sort(function (x, y) { return croissant ? x - y : y - x; }).map(frStr).join(' ' + signe + ' ');
     }
-    out.push({ q: 'Range ces nombres dans l\u2019ordre croissant : ' + l1.map(frStr).join(' ; '), a: tri(l1, '&lt;', true) });
-    out.push({ q: 'Range ces nombres dans l\u2019ordre décroissant : ' + l2.map(frStr).join(' ; '), a: tri(l2, '&gt;', false) });
+    out.push({ q: 'Range ces nombres dans l\u2019ordre croissant : ' + l1.map(frStr).join(' ; '), a: tri(l1, '&lt;', true), v: vOrdre(l1.slice().sort(function (x, y) { return x - y; })) });
+    out.push({ q: 'Range ces nombres dans l\u2019ordre décroissant : ' + l2.map(frStr).join(' ; '), a: tri(l2, '&gt;', false), v: vOrdre(l2.slice().sort(function (x, y) { return y - x; })) });
     return out;
   }
 
@@ -120,10 +245,10 @@
     var e = dixNonNul(60), m = rnd(2, 9) * pick([1, -1]);
     var r = dixNonNul(90), dv = rnd(2, 9) * pick([1, -1]);
     return [
-      { q: 'Calcule : ' + reld(a) + ' + ' + reld(b), a: tdix(a + b) },
-      { q: 'Calcule : ' + reld(c) + ' ' + MOINS + ' ' + reld(d), a: tdix(c - d) },
-      { q: 'Calcule : ' + reld(e) + ' \u00d7 ' + reli(m), a: tdix(e * m) },
-      { q: 'Calcule : ' + reld(r * dv) + ' \u00f7 ' + reli(dv), a: tdix(r) }
+      { q: 'Calcule : ' + reld(a) + ' + ' + reld(b), a: tdix(a + b), v: vNum((a + b) / 10) },
+      { q: 'Calcule : ' + reld(c) + ' ' + MOINS + ' ' + reld(d), a: tdix(c - d), v: vNum((c - d) / 10) },
+      { q: 'Calcule : ' + reld(e) + ' \u00d7 ' + reli(m), a: tdix(e * m), v: vNum(e * m / 10) },
+      { q: 'Calcule : ' + reld(r * dv) + ' \u00f7 ' + reli(dv), a: tdix(r), v: vNum(r / 10) }
     ];
   }
 
@@ -132,7 +257,7 @@
     return unique4(function () {
       var d = pick([2, 3, 4, 5, 6, 8, 10]), n, k = rnd(2, 12), N = d * k;
       do { n = rnd(1, d - 1); } while (gcd(n, d) !== 1);
-      return { q: 'Calcule ' + frac(n, d) + ' de ' + fr(N) + '.', a: frac(n, d) + ' de ' + fr(N) + ' = ' + fr(n * k) };
+      return { q: 'Calcule ' + frac(n, d) + ' de ' + fr(N) + '.', a: frac(n, d) + ' de ' + fr(N) + ' = ' + fr(n * k), v: vNum(n * k) };
     });
   }
 
@@ -147,7 +272,7 @@
     ]);
     return tpl.map(function (f, i) {
       var p = ps[i], step = 100 / gcd(p, 100), N = step * rnd(1, Math.max(1, Math.floor(400 / step)));
-      return f(p, N, fr(N * p / 100));
+      var o = f(p, N, fr(N * p / 100)); o.v = vNum(N * p / 100); return o;
     });
   }
 
@@ -162,7 +287,8 @@
     return shuffle(FORMES).slice(0, 4).map(function (it) {
       var de = pick(['f', 'd', 'p']), vers;
       do { vers = pick(['f', 'd', 'p']); } while (vers === de);
-      return { q: 'Écris ' + montrer(it, de) + ' ' + phrase[vers] + '.', a: montrer(it, de) + ' = ' + montrer(it, vers) };
+      return { q: 'Écris ' + montrer(it, de) + ' ' + phrase[vers] + '.', a: montrer(it, de) + ' = ' + montrer(it, vers),
+        v: vers === 'f' ? vFrac(it[0], it[1], true) : vNum(parseFloat((vers === 'd' ? it[2] : it[3]).replace(',', '.')), vers === 'p' ? '%' : null) };
     });
   }
 
@@ -174,7 +300,7 @@
       do { M = rnd(Math.pow(10, k), Math.pow(10, k + 1) - 1); } while (k > 0 && M % 10 === 0);
       var mant = k === 0 ? String(M) : deplacer(String(M), -k);
       var val = deplacer(String(M), e - k);
-      return { q: 'Écris ' + frStr(val) + ' en écriture scientifique.', a: frStr(val) + ' = ' + frStr(mant) + ' \u00d7 10' + expo(e) };
+      return { q: 'Écris ' + frStr(val) + ' en écriture scientifique.', a: frStr(val) + ' = ' + frStr(mant) + ' \u00d7 10' + expo(e), v: vSci(mant, e) };
     });
   }
 
@@ -182,10 +308,10 @@
   function gen9() {
     var ns = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).slice(0, 4);
     return [
-      { q: 'Calcule ' + ns[0] + sup(2) + '.', a: ns[0] + sup(2) + ' = ' + ns[0] * ns[0] },
-      { q: 'Calcule ' + ns[1] + sup(2) + '.', a: ns[1] + sup(2) + ' = ' + ns[1] * ns[1] },
-      { q: 'Quel nombre positif a pour carré ' + ns[2] * ns[2] + ' ?', a: ns[2] + ' (car ' + ns[2] + sup(2) + ' = ' + ns[2] * ns[2] + ')' },
-      { q: 'Quel nombre positif a pour carré ' + ns[3] * ns[3] + ' ?', a: ns[3] + ' (car ' + ns[3] + sup(2) + ' = ' + ns[3] * ns[3] + ')' }
+      { q: 'Calcule ' + ns[0] + sup(2) + '.', a: ns[0] + sup(2) + ' = ' + ns[0] * ns[0], v: vNum(ns[0] * ns[0]) },
+      { q: 'Calcule ' + ns[1] + sup(2) + '.', a: ns[1] + sup(2) + ' = ' + ns[1] * ns[1], v: vNum(ns[1] * ns[1]) },
+      { q: 'Quel nombre positif a pour carré ' + ns[2] * ns[2] + ' ?', a: ns[2] + ' (car ' + ns[2] + sup(2) + ' = ' + ns[2] * ns[2] + ')', v: vNum(ns[2]) },
+      { q: 'Quel nombre positif a pour carré ' + ns[3] * ns[3] + ' ?', a: ns[3] + ' (car ' + ns[3] + sup(2) + ' = ' + ns[3] * ns[3] + ')', v: vNum(ns[3]) }
     ];
   }
 
@@ -200,7 +326,7 @@
       if (c === 2) rep = oui ? 'Oui, car son dernier chiffre (' + last + ') est pair.' : 'Non, car son dernier chiffre (' + last + ') est impair.';
       else if (c === 5) rep = oui ? 'Oui, car il se termine par ' + last + '.' : 'Non, car il se termine par ' + last + ' (ni 0 ni 5).';
       else rep = oui ? 'Oui, car ' + somme + ' et ' + s + ' est un multiple de ' + c + '.' : 'Non, car ' + somme + ' et ' + s + ' n\u2019est pas un multiple de ' + c + '.';
-      return { q: 'Le nombre ' + frStr(String(n)) + ' est-il divisible par ' + c + ' ? Justifie.', a: rep };
+      return { q: 'Le nombre ' + frStr(String(n)) + ' est-il divisible par ' + c + ' ? Justifie.', a: rep, v: vOuiNon(oui) };
     });
   }
 
@@ -213,35 +339,43 @@
     { nom: 'le successeur de', sym: iN() + ' + 1', f: function (n) { return n + 1; } },
     { nom: 'le carré de', sym: iN() + sup(2), f: function (n) { return n * n; } }
   ];
+  var ALTS11 = {
+    'le double de': ['2n', '2*n', 'n*2', 'n+n'],
+    'le triple de': ['3n', '3*n', 'n*3', 'n+n+n'],
+    'la moitié de': ['n/2', '0.5n', '0.5*n', 'n*0.5', '1/2n', '1/2*n', 'n*1/2'],
+    'le prédécesseur de': ['n-1', '-1+n'],
+    'le successeur de': ['n+1', '1+n'],
+    'le carré de': ['n^2', 'n*n']
+  };
   function gen11() {
     return shuffle(PROPS).slice(0, 4).map(function (p) {
       if (Math.random() < 0.5) {
-        return { q: 'Pour un nombre entier ' + iN() + ', exprime ' + p.nom + ' ' + iN() + ' en fonction de ' + iN() + '.', a: p.sym };
+        return { q: 'Pour un nombre entier ' + iN() + ', exprime ' + p.nom + ' ' + iN() + ' en fonction de ' + iN() + '.', a: p.sym, v: vExpr(ALTS11[p.nom]) };
       }
       var n = p.pair ? 2 * rnd(2, 10) : rnd(2, 20);
-      return { q: 'Pour ' + iN() + ' = ' + n + ', calcule ' + p.nom + ' ' + iN() + '.', a: p.sym + ' = ' + p.f(n) };
+      return { q: 'Pour ' + iN() + ' = ' + n + ', calcule ' + p.nom + ' ' + iN() + '.', a: p.sym + ' = ' + p.f(n), v: vNum(p.f(n)) };
     });
   }
 
   /* 19 – Triangles, quadrilatères particuliers, médiatrice */
   var BANQUE19 = [
-    ['Comment s\u2019appelle un triangle qui a trois côtés de même longueur ?', 'Un triangle équilatéral.'],
-    ['Comment s\u2019appelle un triangle qui a deux côtés de même longueur ?', 'Un triangle isocèle.'],
-    ['Comment s\u2019appelle un triangle qui a un angle droit ?', 'Un triangle rectangle.'],
-    ['Comment s\u2019appelle un triangle qui a un angle droit et deux côtés de même longueur ?', 'Un triangle rectangle isocèle.'],
-    ['Un triangle a trois angles de 60°. Quelle est sa nature ?', 'Il est équilatéral.'],
-    ['Comment s\u2019appelle un triangle dont les trois côtés ont des longueurs différentes ?', 'Un triangle quelconque.'],
-    ['Comment s\u2019appelle un quadrilatère qui a quatre angles droits ?', 'Un rectangle.'],
-    ['Comment s\u2019appelle un quadrilatère qui a quatre côtés de même longueur ?', 'Un losange.'],
-    ['Comment s\u2019appelle un quadrilatère qui a quatre côtés de même longueur et quatre angles droits ?', 'Un carré.'],
-    ['Comment s\u2019appelle un quadrilatère dont les côtés opposés sont parallèles deux à deux ?', 'Un parallélogramme.'],
-    ['Comment s\u2019appelle un quadrilatère qui a seulement deux côtés parallèles ?', 'Un trapèze.'],
-    ['Un quadrilatère a ses diagonales perpendiculaires qui se coupent en leur milieu. Quelle est sa nature ?', 'C\u2019est un losange.'],
-    ['Un quadrilatère a ses diagonales de même longueur qui se coupent en leur milieu. Quelle est sa nature ?', 'C\u2019est un rectangle.'],
-    ['Comment s\u2019appelle la droite qui passe par le milieu d\u2019un segment et qui lui est perpendiculaire ?', 'La médiatrice du segment.'],
-    ['Tout point de la médiatrice d\u2019un segment [AB] est situé à quelle distance de A et de B ?', 'À la même distance de A et de B.']
+    ['Comment s\u2019appelle un triangle qui a trois côtés de même longueur ?', 'Un triangle équilatéral.', [['equilateral']]],
+    ['Comment s\u2019appelle un triangle qui a deux côtés de même longueur ?', 'Un triangle isocèle.', [['isocele']]],
+    ['Comment s\u2019appelle un triangle qui a un angle droit ?', 'Un triangle rectangle.', [['rectangle']]],
+    ['Comment s\u2019appelle un triangle qui a un angle droit et deux côtés de même longueur ?', 'Un triangle rectangle isocèle.', [['rectangle', 'isocele']]],
+    ['Un triangle a trois angles de 60°. Quelle est sa nature ?', 'Il est équilatéral.', [['equilateral']]],
+    ['Comment s\u2019appelle un triangle dont les trois côtés ont des longueurs différentes ?', 'Un triangle quelconque.', [['quelconque'], ['scalene']]],
+    ['Comment s\u2019appelle un quadrilatère qui a quatre angles droits ?', 'Un rectangle.', [['rectangle'], ['carre']]],
+    ['Comment s\u2019appelle un quadrilatère qui a quatre côtés de même longueur ?', 'Un losange.', [['losange'], ['carre']]],
+    ['Comment s\u2019appelle un quadrilatère qui a quatre côtés de même longueur et quatre angles droits ?', 'Un carré.', [['carre']]],
+    ['Comment s\u2019appelle un quadrilatère dont les côtés opposés sont parallèles deux à deux ?', 'Un parallélogramme.', [['parallelogramme']]],
+    ['Comment s\u2019appelle un quadrilatère qui a seulement deux côtés parallèles ?', 'Un trapèze.', [['trapeze']]],
+    ['Un quadrilatère a ses diagonales perpendiculaires qui se coupent en leur milieu. Quelle est sa nature ?', 'C\u2019est un losange.', [['losange'], ['carre']]],
+    ['Un quadrilatère a ses diagonales de même longueur qui se coupent en leur milieu. Quelle est sa nature ?', 'C\u2019est un rectangle.', [['rectangle'], ['carre']]],
+    ['Comment s\u2019appelle la droite qui passe par le milieu d\u2019un segment et qui lui est perpendiculaire ?', 'La médiatrice du segment.', [['mediatrice']]],
+    ['Tout point de la médiatrice d\u2019un segment [AB] est situé à quelle distance de A et de B ?', 'À la même distance de A et de B.', [['meme', 'distance'], ['egale', 'distance'], ['equidistant']]]
   ];
-  function gen19() { return shuffle(BANQUE19).slice(0, 4).map(function (x) { return { q: x[0], a: x[1] }; }); }
+  function gen19() { return shuffle(BANQUE19).slice(0, 4).map(function (x) { return { q: x[0], a: x[1], v: vMots(x[2]) }; }); }
 
   /* 20 – Reconnaître et citer des angles */
   var NATURES = {
@@ -251,28 +385,28 @@
     plat: { nom: 'plat', gen: function () { return 180; }, ex: 'Il mesure exactement 180°' }
   };
   var BANQUE20 = [
-    ['Comment appelle-t-on un angle qui mesure 90° ?', 'Un angle droit.'],
-    ['Comment appelle-t-on un angle dont la mesure est inférieure à 90° ?', 'Un angle aigu.'],
-    ['Comment appelle-t-on un angle dont la mesure est comprise entre 90° et 180° ?', 'Un angle obtus.'],
-    ['Comment appelle-t-on un angle qui mesure 180° ?', 'Un angle plat.'],
-    ['Comment appelle-t-on deux angles dont la somme est égale à 90° ?', 'Des angles complémentaires.'],
-    ['Comment appelle-t-on deux angles dont la somme est égale à 180° ?', 'Des angles supplémentaires.'],
-    ['Deux angles sont opposés par le sommet. Que peut-on dire de leurs mesures ?', 'Elles sont égales.']
+    ['Comment appelle-t-on un angle qui mesure 90° ?', 'Un angle droit.', [['droit']]],
+    ['Comment appelle-t-on un angle dont la mesure est inférieure à 90° ?', 'Un angle aigu.', [['aigu']]],
+    ['Comment appelle-t-on un angle dont la mesure est comprise entre 90° et 180° ?', 'Un angle obtus.', [['obtus']]],
+    ['Comment appelle-t-on un angle qui mesure 180° ?', 'Un angle plat.', [['plat']]],
+    ['Comment appelle-t-on deux angles dont la somme est égale à 90° ?', 'Des angles complémentaires.', [['complementaire']]],
+    ['Comment appelle-t-on deux angles dont la somme est égale à 180° ?', 'Des angles supplémentaires.', [['supplementaire']]],
+    ['Deux angles sont opposés par le sommet. Que peut-on dire de leurs mesures ?', 'Elles sont égales.', [['egal'], ['egaux'], ['meme']]]
   ];
   function gen20() {
     var cs = shuffle(['aigu', 'droit', 'obtus', 'plat']).slice(0, 2), out = [];
     cs.forEach(function (c) {
       var m = NATURES[c].gen();
-      out.push({ q: 'Un angle mesure ' + m + '°. Est-il aigu, droit, obtus ou plat ?', a: 'C\u2019est un angle ' + NATURES[c].nom + ' (' + NATURES[c].ex.toLowerCase() + ').' });
+      out.push({ q: 'Un angle mesure ' + m + '°. Est-il aigu, droit, obtus ou plat ?', a: 'C\u2019est un angle ' + NATURES[c].nom + ' (' + NATURES[c].ex.toLowerCase() + ').', v: vMots([[c]]) });
     });
     var b = pick(BANQUE20);
-    out.push({ q: b[0], a: b[1] });
+    out.push({ q: b[0], a: b[1], v: vMots(b[2]) });
     if (Math.random() < 0.5) {
       var x = rnd(5, 85);
-      out.push({ q: 'Deux angles sont complémentaires. L\u2019un mesure ' + x + '°. Combien mesure l\u2019autre ?', a: '90° ' + MOINS + ' ' + x + '° = ' + (90 - x) + '°' });
+      out.push({ q: 'Deux angles sont complémentaires. L\u2019un mesure ' + x + '°. Combien mesure l\u2019autre ?', a: '90° ' + MOINS + ' ' + x + '° = ' + (90 - x) + '°', v: vNum(90 - x, '°') });
     } else {
       var y = rnd(10, 170);
-      out.push({ q: 'Deux angles sont supplémentaires. L\u2019un mesure ' + y + '°. Combien mesure l\u2019autre ?', a: '180° ' + MOINS + ' ' + y + '° = ' + (180 - y) + '°' });
+      out.push({ q: 'Deux angles sont supplémentaires. L\u2019un mesure ' + y + '°. Combien mesure l\u2019autre ?', a: '180° ' + MOINS + ' ' + y + '° = ' + (180 - y) + '°', v: vNum(180 - y, '°') });
     }
     return shuffle(out);
   }
@@ -286,7 +420,8 @@
       var t = noms[i];
       return {
         q: 'Dans le triangle <i>' + t + '</i>, l\u2019angle en <i>' + t[0] + '</i> mesure ' + a + '° et l\u2019angle en <i>' + t[1] + '</i> mesure ' + b + '°. Calcule la mesure de l\u2019angle en <i>' + t[2] + '</i>.',
-        a: '180° ' + MOINS + ' ' + a + '° ' + MOINS + ' ' + b + '° = ' + (180 - a - b) + '°'
+        a: '180° ' + MOINS + ' ' + a + '° ' + MOINS + ' ' + b + '° = ' + (180 - a - b) + '°',
+        v: vNum(180 - a - b, '°')
       };
     });
   }
@@ -299,7 +434,8 @@
       var v = valAlea(), res = deplacer(v, (j - i) * pas);
       return {
         q: 'Convertis ' + frStr(v) + NBSP + unites[i] + ' en ' + unites[j] + '.',
-        a: frStr(v) + NBSP + unites[i] + ' = ' + frStr(res) + NBSP + unites[j]
+        a: frStr(v) + NBSP + unites[i] + ' = ' + frStr(res) + NBSP + unites[j],
+        v: vNum(res, unites[j])
       };
     });
   }
@@ -310,24 +446,24 @@
   /* 25 – s, min, h, jour */
   function plur(k, mot) { return fr(k) + ' ' + (mot === 'jour' && k >= 2 ? 'jours' : mot); }
   var G25 = [
-    function () { var k = pick([2, 3, 4, 5, 6, 8, 10, 12, 15, 1.5, 2.5]); return { q: 'Convertis ' + plur(k, 'min') + ' en secondes.', a: plur(k, 'min') + ' = ' + fr(k * 60) + ' s' }; },
-    function () { var k = pick([2, 3, 4, 5, 6, 8, 0.5, 1.5, 2.5, 0.25, 0.75]); return { q: 'Convertis ' + plur(k, 'h') + ' en minutes.', a: plur(k, 'h') + ' = ' + fr(k * 60) + ' min' }; },
-    function () { var k = rnd(1, 5); return { q: 'Convertis ' + plur(k, 'h') + ' en secondes.', a: plur(k, 'h') + ' = ' + fr(k * 3600) + ' s' }; },
-    function () { var k = pick([2, 3, 4, 5, 7, 1.5]); return { q: 'Convertis ' + plur(k, 'jour') + ' en heures.', a: plur(k, 'jour') + ' = ' + fr(k * 24) + ' h' }; },
-    function () { var k = pick([1, 2, 3]); return { q: 'Convertis ' + plur(k, 'jour') + ' en minutes.', a: plur(k, 'jour') + ' = ' + fr(k * 1440) + ' min' }; },
-    function () { var m = rnd(2, 20); return { q: 'Convertis ' + fr(m * 60) + ' s en minutes.', a: fr(m * 60) + ' s = ' + m + ' min' }; },
-    function () { var h = rnd(2, 6); return { q: 'Convertis ' + fr(h * 60) + ' min en heures.', a: fr(h * 60) + ' min = ' + h + ' h' }; },
-    function () { var j = rnd(2, 5); return { q: 'Convertis ' + fr(j * 24) + ' h en jours.', a: fr(j * 24) + ' h = ' + j + ' jours' }; }
+    function () { var k = pick([2, 3, 4, 5, 6, 8, 10, 12, 15, 1.5, 2.5]); return { q: 'Convertis ' + plur(k, 'min') + ' en secondes.', a: plur(k, 'min') + ' = ' + fr(k * 60) + ' s', v: vNum(k * 60, 's') }; },
+    function () { var k = pick([2, 3, 4, 5, 6, 8, 0.5, 1.5, 2.5, 0.25, 0.75]); return { q: 'Convertis ' + plur(k, 'h') + ' en minutes.', a: plur(k, 'h') + ' = ' + fr(k * 60) + ' min', v: vNum(k * 60, 'min') }; },
+    function () { var k = rnd(1, 5); return { q: 'Convertis ' + plur(k, 'h') + ' en secondes.', a: plur(k, 'h') + ' = ' + fr(k * 3600) + ' s', v: vNum(k * 3600, 's') }; },
+    function () { var k = pick([2, 3, 4, 5, 7, 1.5]); return { q: 'Convertis ' + plur(k, 'jour') + ' en heures.', a: plur(k, 'jour') + ' = ' + fr(k * 24) + ' h', v: vNum(k * 24, 'h') }; },
+    function () { var k = pick([1, 2, 3]); return { q: 'Convertis ' + plur(k, 'jour') + ' en minutes.', a: plur(k, 'jour') + ' = ' + fr(k * 1440) + ' min', v: vNum(k * 1440, 'min') }; },
+    function () { var m = rnd(2, 20); return { q: 'Convertis ' + fr(m * 60) + ' s en minutes.', a: fr(m * 60) + ' s = ' + m + ' min', v: vNum(m, 'min') }; },
+    function () { var h = rnd(2, 6); return { q: 'Convertis ' + fr(h * 60) + ' min en heures.', a: fr(h * 60) + ' min = ' + h + ' h', v: vNum(h, 'h') }; },
+    function () { var j = rnd(2, 5); return { q: 'Convertis ' + fr(j * 24) + ' h en jours.', a: fr(j * 24) + ' h = ' + j + ' jours', v: vNum(j, 'jours') }; }
   ];
   function gen25() { return shuffle(G25).slice(0, 4).map(function (f) { return f(); }); }
 
   /* 26 – dm³, L, m³ */
   function gen26() {
     return shuffle([
-      function () { var v = valAlea(); return { q: 'Convertis ' + frStr(v) + NBSP + 'dm\u00b3 en litres.', a: frStr(v) + NBSP + 'dm\u00b3 = ' + frStr(v) + NBSP + 'L' }; },
-      function () { var v = valAlea(); return { q: 'Convertis ' + frStr(v) + NBSP + 'L en dm\u00b3.', a: frStr(v) + NBSP + 'L = ' + frStr(v) + NBSP + 'dm\u00b3' }; },
-      function () { var v = valAlea(); return { q: 'Convertis ' + frStr(v) + NBSP + 'm\u00b3 en litres.', a: frStr(v) + NBSP + 'm\u00b3 = ' + frStr(deplacer(v, 3)) + NBSP + 'L' }; },
-      function () { var v = String(rnd(1, 99) * 100); return { q: 'Convertis ' + frStr(v) + NBSP + 'L en m\u00b3.', a: frStr(v) + NBSP + 'L = ' + frStr(deplacer(v, -3)) + NBSP + 'm\u00b3' }; }
+      function () { var v = valAlea(); return { q: 'Convertis ' + frStr(v) + NBSP + 'dm\u00b3 en litres.', a: frStr(v) + NBSP + 'dm\u00b3 = ' + frStr(v) + NBSP + 'L', v: vNum(v, 'L') }; },
+      function () { var v = valAlea(); return { q: 'Convertis ' + frStr(v) + NBSP + 'L en dm\u00b3.', a: frStr(v) + NBSP + 'L = ' + frStr(v) + NBSP + 'dm\u00b3', v: vNum(v, 'dm\u00b3') }; },
+      function () { var v = valAlea(); return { q: 'Convertis ' + frStr(v) + NBSP + 'm\u00b3 en litres.', a: frStr(v) + NBSP + 'm\u00b3 = ' + frStr(deplacer(v, 3)) + NBSP + 'L', v: vNum(deplacer(v, 3), 'L') }; },
+      function () { var v = String(rnd(1, 99) * 100); return { q: 'Convertis ' + frStr(v) + NBSP + 'L en m\u00b3.', a: frStr(v) + NBSP + 'L = ' + frStr(deplacer(v, -3)) + NBSP + 'm\u00b3', v: vNum(deplacer(v, -3), 'm\u00b3') }; }
     ]).map(function (f) { return f(); });
   }
 
@@ -349,18 +485,18 @@
     var t = pick(['cartes', 'roue', 'impossible']);
     if (t === 'cartes') {
       var c = pick(CARTES);
-      q4 = { q: 'On tire une carte au hasard dans un jeu de 32 cartes. Quelle est la probabilité d\u2019obtenir ' + c[0] + ' ?', a: 'P = ' + fracSimple(c[1], 32) };
+      q4 = { q: 'On tire une carte au hasard dans un jeu de 32 cartes. Quelle est la probabilité d\u2019obtenir ' + c[0] + ' ?', a: 'P = ' + fracSimple(c[1], 32), v: vFrac(c[1], 32) };
     } else if (t === 'roue') {
       var r = pick(ROUE);
-      q4 = { q: 'Une roue est partagée en 10 secteurs identiques numérotés de 1 à 10. On la fait tourner. Quelle est la probabilité d\u2019obtenir ' + r[0] + ' ?', a: 'P = ' + fracSimple(r[1], 10) };
+      q4 = { q: 'Une roue est partagée en 10 secteurs identiques numérotés de 1 à 10. On la fait tourner. Quelle est la probabilité d\u2019obtenir ' + r[0] + ' ?', a: 'P = ' + fracSimple(r[1], 10), v: vFrac(r[1], 10) };
     } else {
       var cs = shuffle(COULEURS).slice(0, 3), a = rnd(2, 8), b = rnd(2, 8);
-      q4 = { q: 'Une urne contient ' + boules(a, cs[0]) + ' et ' + boules(b, cs[1]) + '. On tire une boule au hasard. Quelle est la probabilité d\u2019obtenir une boule ' + cs[2].s + ' ?', a: 'P = 0 (événement impossible)' };
+      q4 = { q: 'Une urne contient ' + boules(a, cs[0]) + ' et ' + boules(b, cs[1]) + '. On tire une boule au hasard. Quelle est la probabilité d\u2019obtenir une boule ' + cs[2].s + ' ?', a: 'P = 0 (événement impossible)', v: vFrac(0, 1) };
     }
     return [
-      { q: u1.txt + ' Quelle est la probabilité d\u2019obtenir une boule ' + u1.cs[i1].s + ' ?', a: 'P = ' + fracSimple(u1.n[i1], u1.tot) },
-      { q: u2.txt + ' Quelle est la probabilité d\u2019obtenir une boule qui n\u2019est pas ' + u2.cs[i2].s + ' ?', a: 'P = ' + fracSimple(u2.tot - u2.n[i2], u2.tot) },
-      { q: 'On lance un dé équilibré à 6 faces. Quelle est la probabilité d\u2019obtenir ' + d[0] + ' ?', a: 'P = ' + fracSimple(d[1], 6) },
+      { q: u1.txt + ' Quelle est la probabilité d\u2019obtenir une boule ' + u1.cs[i1].s + ' ?', a: 'P = ' + fracSimple(u1.n[i1], u1.tot), v: vFrac(u1.n[i1], u1.tot) },
+      { q: u2.txt + ' Quelle est la probabilité d\u2019obtenir une boule qui n\u2019est pas ' + u2.cs[i2].s + ' ?', a: 'P = ' + fracSimple(u2.tot - u2.n[i2], u2.tot), v: vFrac(u2.tot - u2.n[i2], u2.tot) },
+      { q: 'On lance un dé équilibré à 6 faces. Quelle est la probabilité d\u2019obtenir ' + d[0] + ' ?', a: 'P = ' + fracSimple(d[1], 6), v: vFrac(d[1], 6) },
       q4
     ];
   }
@@ -385,7 +521,7 @@
     var rep = prop
       ? 'Oui : tous les quotients sont égaux (' + xs.map(function (x, i) { return ratio(ys[i], x); }).join(' ; ') + ').'
       : 'Non : les quotients ne sont pas égaux (' + ratio(ys[0], xs[0]) + ' alors que ' + ratio(ys[1], xs[1]) + ').';
-    return { q: 'Ce tableau est-il un tableau de proportionnalité ? Justifie.' + h, a: rep };
+    return { q: 'Ce tableau est-il un tableau de proportionnalité ? Justifie.' + h, a: rep, v: vOuiNon(prop) };
   }
   var SIT_OUI = [
     ['Les poires coûtent 3,20 \u20ac le kilogramme. Le prix à payer est-il proportionnel à la masse achetée ?', 'Oui : le prix se calcule en multipliant la masse par 3,20 \u20ac/kg.'],
@@ -404,7 +540,7 @@
   ];
   function gen29() {
     var t1 = Math.random() < 0.5, s1 = Math.random() < 0.5, a = pick(s1 ? SIT_OUI : SIT_NON), b = pick(s1 ? SIT_NON : SIT_OUI);
-    return shuffle([questionTableau(t1), questionTableau(!t1), { q: a[0], a: a[1] }, { q: b[0], a: b[1] }]);
+    return shuffle([questionTableau(t1), questionTableau(!t1), { q: a[0], a: a[1], v: vOuiNon(s1) }, { q: b[0], a: b[1], v: vOuiNon(!s1) }]);
   }
 
   /* ================= Auto'Tips (= objectifs) =================
@@ -470,12 +606,12 @@
     var nb = obj.length, nombres = obj.map(function () { return 1; }), total = nb, i = 0, out = [];
     while (nb && total < QUESTIONS_MIN) { nombres[i % nb]++; total++; i++; }
     obj.forEach(function (a, k) {
-      shuffle(GEN[a]()).slice(0, nombres[k]).forEach(function (x) { out.push({ q: x.q, a: x.a, at: a }); });
+      shuffle(GEN[a]()).slice(0, nombres[k]).forEach(function (x) { out.push({ q: x.q, a: x.a, v: x.v, at: a }); });
     });
     return out;
   }
 
-  if (typeof module !== 'undefined' && module.exports) { module.exports = { GEN: GEN, TITRES: TITRES, SERIES: SERIES, questionsSerie: questionsSerie }; }
+  if (typeof module !== 'undefined' && module.exports) { module.exports = { GEN: GEN, TITRES: TITRES, SERIES: SERIES, questionsSerie: questionsSerie, verifier: verifier }; }
   if (typeof document === 'undefined') return;
 
   /* ================= Interface ================= */
@@ -502,10 +638,30 @@
     selSerie.appendChild(SERIES[n] ? option(String(n), 'Série ' + n) : option(String(n), 'Série ' + n + ' (bientôt disponible)', true));
   }
 
+  var courantes = [];
+
+  /* Applique (ou retire) la correction : vérifie chaque réponse tapée par l'élève. */
   function majBoutonCorrection() {
     btnCorr.setAttribute('aria-expanded', corrige ? 'true' : 'false');
     btnCorr.textContent = corrige ? 'Masquer la correction' : 'Afficher la correction';
-    Array.prototype.forEach.call(liste.querySelectorAll('.reponse'), function (r) { r.hidden = !corrige; });
+    Array.prototype.forEach.call(liste.children, function (li, i) {
+      var champ = li.querySelector('.champ-reponse'), verdict = li.querySelector('.verdict'), rep = li.querySelector('.reponse');
+      li.classList.remove('juste', 'faux', 'vide');
+      champ.disabled = corrige;
+      verdict.hidden = true; rep.hidden = true;
+      if (!corrige) return;
+      var ok = verifier(courantes[i] && courantes[i].v, champ.value);
+      if (ok === true) {
+        li.classList.add('juste');
+        verdict.textContent = '\u2713 Bonne réponse !';
+        verdict.hidden = false;
+      } else {
+        li.classList.add(ok === null ? 'vide' : 'faux');
+        verdict.textContent = ok === null ? '\u2717 Pas de réponse.' : '\u2717 Ce n\u2019est pas la bonne réponse.';
+        verdict.hidden = false;
+        rep.hidden = false;
+      }
+    });
   }
 
   function majLecons() {
@@ -520,10 +676,11 @@
   function afficherSerie() {
     var n = parseInt(selSerie.value, 10);
     corrige = false;
-    if (!n || !SERIES[n]) { if (n) selSerie.value = ''; zone.hidden = true; liste.innerHTML = ''; majBoutonCorrection(); majLecons(); return; }
+    if (!n || !SERIES[n]) { if (n) selSerie.value = ''; zone.hidden = true; liste.innerHTML = ''; courantes = []; majBoutonCorrection(); majLecons(); return; }
     titre.textContent = 'Série ' + n;
     liste.innerHTML = '';
-    questionsSerie(n).forEach(function (x, i) {
+    courantes = questionsSerie(n);
+    courantes.forEach(function (x, i) {
       var li = document.createElement('li');
       var obj = document.createElement('div'); obj.className = 'objectif';
       obj.textContent = 'Auto\u2019Tips ' + x.at + ' \u2013 ' + TITRES[x.at];
@@ -532,9 +689,10 @@
       champ.type = 'text'; champ.className = 'champ-reponse'; champ.autocomplete = 'off';
       champ.setAttribute('aria-label', 'Ta réponse à la question ' + (i + 1));
       champ.placeholder = 'Ta réponse';
+      var verdict = document.createElement('div'); verdict.className = 'verdict'; verdict.hidden = true;
       var rep = document.createElement('div'); rep.className = 'reponse'; rep.hidden = true;
       rep.innerHTML = '<strong>Correction :</strong> ' + x.a;
-      li.appendChild(obj); li.appendChild(q); li.appendChild(champ); li.appendChild(rep);
+      li.appendChild(obj); li.appendChild(q); li.appendChild(champ); li.appendChild(verdict); li.appendChild(rep);
       liste.appendChild(li);
     });
     zone.hidden = false;

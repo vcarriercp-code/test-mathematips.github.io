@@ -118,16 +118,26 @@ summary { cursor: pointer; font-weight: 600; }
 .bouton-action[aria-expanded="true"] { background: var(--texte); color: var(--fond); }
 .selecteurs select:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Auto'Tips : questions générées */
-.questions { list-style: decimal; padding-left: 1.4em; display: grid; gap: 14px; margin: 0 0 16px; }
-.questions li { background: var(--rose); border: 2px solid var(--accent); border-radius: 12px; padding: 14px 16px; }
-.questions li::marker { font-weight: 700; }
-.enonce { margin-bottom: 10px; }
+/* Auto'Tips : questions générées (2 colonnes, 1 seule sur téléphone) */
+.questions { list-style: none; counter-reset: q; padding: 0; margin: 0 0 16px;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.questions li { counter-increment: q; background: var(--rose); border: 2px solid var(--accent); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+.questions li::before { content: "Question " counter(q); display: block; font-weight: 700; margin-bottom: 4px; }
+@media (max-width: 700px) { .questions { grid-template-columns: 1fr; } }
+.enonce { margin-bottom: 10px; overflow-x: auto; }
 .champ-reponse {
   width: 100%; max-width: 420px; font: inherit; padding: 8px 12px;
   border: 2px solid var(--accent); border-radius: 8px; background: var(--fond); color: var(--texte);
 }
-.reponse { margin-top: 10px; padding: 8px 12px; border-left: 4px solid var(--texte); background: var(--fond); border-radius: 4px; }
+.champ-reponse:disabled { opacity: 1; cursor: default; }
+.verdict { margin-top: 10px; font-weight: 700; }
+.questions li.juste { border-color: #2e7d32; }
+.questions li.juste .champ-reponse { border-color: #2e7d32; }
+.questions li.juste .verdict { color: #1b5e20; }
+.questions li.faux, .questions li.vide { border-color: #b3261e; }
+.questions li.faux .champ-reponse, .questions li.vide .champ-reponse { border-color: #b3261e; }
+.questions li.faux .verdict, .questions li.vide .verdict { color: #8c1d18; }
+.reponse { margin-top: 8px; padding: 8px 12px; border-left: 4px solid #2e7d32; background: #e3f4e1; color: #1b4d1e; border-radius: 4px; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 0.15em; line-height: 1.15; font-size: 0.95em; }
 .frac > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 0.25em 0.05em; }
